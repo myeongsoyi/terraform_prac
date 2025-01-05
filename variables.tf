@@ -12,9 +12,8 @@ variable "availability_zone" {
 }
 
 variable "public_subnets" {
-  type = list(object({
-    name = string
+  type = map(object({
     availability_zone = string
-    cidr_block = string 
+    cidr_block = string
   }))
 }

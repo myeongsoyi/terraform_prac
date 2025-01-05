@@ -17,14 +17,14 @@ resource "aws_internet_gateway" "main" {
 }
 
 resource "aws_subnet" "public" {
-  count = length(var.public_subnets)
-  
-  vpc_id = aws_vpc.main.id
-  cidr_block = var.public_subnets[count.index].cidr_block
-  availability_zone = var.public_subnets[count.index].availability_zone
+  for_each = var.public_subnets
+
+  vpc_id =  aws_vpc.main.id
+  cidr_block = each.value.cidr_block
+  availability_zone = each.value.availability_zone
   map_public_ip_on_launch = true
-  
+
   tags = {
-    Name = var.public_subnets[count.index].name
+    Name = each.key
   }
 }
