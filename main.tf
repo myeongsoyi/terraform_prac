@@ -16,22 +16,13 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-resource "aws_subnet" "public_a" {
+resource "aws_subnet" "public" {
+  count = length(var.availability_zone)
   vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  cidr_block = cidrsubnet(var.cidr_block, 8, count.index+1)
+  availability_zone = "us-east-1${var.availability_zone[count.index]}"
   map_public_ip_on_launch = true
   tags = {
-    Name = "${var.vpc_name}-public-subnet-a"
-  }
-}
-
-resource "aws_subnet" "public_b" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.2.0/24"
-  availability_zone = "us-east-1b"
-  map_public_ip_on_launch = true
-  tags = {
-    Name = "${var.vpc_name}-public-subnet-b"
+    Name = "${var.vpc_name}-public-subnet-${var.availability_zone[count.index]}"
   }
 }
