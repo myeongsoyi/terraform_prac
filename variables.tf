@@ -11,16 +11,10 @@ variable "availability_zone" {
   description = "az of subnet"
 }
 
-variable "public_subnets" {
+variable "subnets" {
   type = map(object({
-    availability_zone = string
     cidr_block = string
-  }))
-}
-
-variable "private_subnets" {
-  type = map(object({
     availability_zone = string
-    cidr_block = string
+    nat_gateway_subnet = optional(string)
   }))
 }

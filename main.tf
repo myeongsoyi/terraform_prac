@@ -1,3 +1,11 @@
+locals {
+    private_subnets = {
+        for key, subnet in var.subnets :
+        key => subnet
+        if lookup(subnet, "nat_gateway_subnet", null) != null
+    }
+}
+
 resource "aws_vpc" "main" {
   cidr_block = var.cidr_block
 
@@ -16,26 +24,13 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-resource "aws_subnet" "public" {
-  for_each = var.public_subnets
+resource "aws_subnet" "subnets" {
+  for_each = var.subnets
 
-  vpc_id =  aws_vpc.main.id
+  vpc_id = aws_vpc.main.id
   cidr_block = each.value.cidr_block
   availability_zone = each.value.availability_zone
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = each.key
-  }
-}
-
-resource "aws_subnet" "private" {
-  for_each = var.private_subnets
-
-  vpc_id =  aws_vpc.main.id
-  cidr_block = each.value.cidr_block
-  availability_zone = each.value.availability_zone
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = lookup(each.value, "nat_gateway_subnet", null) != null ? false: true
 
   tags = {
     Name = each.key
@@ -43,12 +38,12 @@ resource "aws_subnet" "private" {
 }
 
 resource "aws_eip" "nat_ips" {
-  count = var.private_subnets != {} ? length(var.private_subnets) : 0
+  for_each = local.private_subnets
 }
 
 resource "aws_nat_gateway" "gateways" {
-  count = var.private_subnets != {} ? length(var.private_subnets) : 0
+  for_each = local.private_subnets
 
-  allocation_id = aws_eip.nat_ips[count.index].id
-  subnet_id = tolist(values(aws_subnet.public))[count.index].id
+  allocation_id = aws_eip.nat_ips[each.key].id
+  subnet_id = aws_subnet.subnets[each.value.nat_gateway_subnet].id
 }
